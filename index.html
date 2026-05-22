@@ -40,6 +40,8 @@
             align-items: flex-start;
             flex-wrap: wrap;
             justify-content: center;
+            width: 100%;
+            max-width: 1200px;
         }
 
         /* 畫布與面板區域 */
@@ -50,6 +52,8 @@
             padding: 15px;
             border-radius: 10px;
             text-align: center;
+            /* 確保外框能適應畫布大小 */
+            max-width: 100%; 
         }
 
         canvas {
@@ -57,12 +61,15 @@
             background-color: #E8F8F5; /* 極淺的青色，視覺清爽 */
             display: block;
             margin: 0 auto;
+            /* 確保在小螢幕上不會破版 */
+            max-width: 100%;
+            height: auto;
         }
 
         .score-board {
             font-family: 'Press Start 2P', monospace;
-            font-size: 16px;
-            margin: 15px 0;
+            font-size: 20px;
+            margin: 10px 0 20px 0;
             color: #333;
         }
 
@@ -71,7 +78,7 @@
             display: flex;
             justify-content: center;
             gap: 15px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         button {
@@ -108,7 +115,8 @@
             box-shadow: 8px 8px 0px #000;
             padding: 20px;
             border-radius: 10px;
-            max-width: 300px;
+            width: 300px;
+            flex-shrink: 0;
         }
 
         .instructions h2 {
@@ -131,10 +139,14 @@
         }
 
         /* 手機版響應式 */
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .game-container {
                 flex-direction: column;
                 align-items: center;
+            }
+            .instructions {
+                width: 100%;
+                max-width: 600px;
             }
         }
     </style>
@@ -148,7 +160,7 @@
             <div class="score-board">
                 SCORE: <span id="score">0</span>
             </div>
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
             
             <div class="controls">
                 <button class="btn-start" id="startBtn">開始遊戲</button>
@@ -177,8 +189,9 @@
         const restartBtn = document.getElementById("restartBtn");
 
         // 遊戲基本設定
-        const gridSize = 20; // 每個格子的寬高
-        const tileCount = canvas.width / gridSize; // 一列/行有幾個格子
+        const gridSize = 20; // 每個格子的寬高保持不變
+        const tileCountX = canvas.width / gridSize; // X軸有幾個格子 (30格)
+        const tileCountY = canvas.height / gridSize; // Y軸有幾個格子 (30格)
         
         // 遊戲狀態變數
         let snake = [];
@@ -193,11 +206,14 @@
 
         // 初始化遊戲狀態
         function initGame() {
-            // 蛇的初始位置 (置中，長度為3)
+            // 讓蛇的初始位置動態置中
+            const startX = Math.floor(tileCountX / 2);
+            const startY = Math.floor(tileCountY / 2);
+
             snake = [
-                { x: 10, y: 10 },
-                { x: 9, y: 10 },
-                { x: 8, y: 10 }
+                { x: startX, y: startY },
+                { x: startX - 1, y: startY },
+                { x: startX - 2, y: startY }
             ];
             dx = 1; // 初始向右移動
             dy = 0;
@@ -234,7 +250,8 @@
                 ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#FF007F";
-                ctx.font = "30px 'Press Start 2P', sans-serif";
+                // 放大結束文字
+                ctx.font = "40px 'Press Start 2P', sans-serif"; 
                 ctx.textAlign = "center";
                 ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
                 
@@ -286,8 +303,8 @@
 
         // 產生食物
         function spawnFood() {
-            foodX = Math.floor(Math.random() * tileCount);
-            foodY = Math.floor(Math.random() * tileCount);
+            foodX = Math.floor(Math.random() * tileCountX);
+            foodY = Math.floor(Math.random() * tileCountY);
             
             // 確保食物不會生在蛇的身上
             snake.forEach(function isFoodOnSnake(part) {
@@ -314,9 +331,9 @@
             }
             // 撞到牆壁
             const hitLeftWall = snake[0].x < 0;
-            const hitRightWall = snake[0].x >= tileCount;
+            const hitRightWall = snake[0].x >= tileCountX;
             const hitTopWall = snake[0].y < 0;
-            const hitBottomWall = snake[0].y >= tileCount;
+            const hitBottomWall = snake[0].y >= tileCountY;
 
             return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
         }
@@ -373,7 +390,7 @@
         // 初始化畫面 (但不開始動作)
         clearCanvas();
         ctx.fillStyle = "#333";
-        ctx.font = "16px 'Noto Sans TC', sans-serif";
+        ctx.font = "20px 'Noto Sans TC', sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("點擊「開始遊戲」", canvas.width / 2, canvas.height / 2);
 
