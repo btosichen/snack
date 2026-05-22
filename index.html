@@ -231,7 +231,7 @@
         // ==========================================
         // ⚠️ 請在這裡貼上你從 Google Apps Script 取得的網址
         // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxDE5Dny_ztcLIZsflO4d7mwFF-JSp21EIxszWKWg5DO5hU7zZ8UFO0aMFxhxvN3Vcp/exec"; 
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxk7eeg3TBDu7ZUcnz6aUpIAI3i1KQIo3-FYCQC8xoQBk_0GO4-Dla4U-jHSubnk-LG/exec"; 
 
         // 取得 DOM 元素
         const canvas = document.getElementById("gameCanvas");
@@ -416,61 +416,62 @@
 
         // 讀取排行榜
         function loadLeaderboard() {
-            if (GAS_URL === "https://script.google.com/macros/s/AKfycbxDE5Dny_ztcLIZsflO4d7mwFF-JSp21EIxszWKWg5DO5hU7zZ8UFO0aMFxhxvN3Vcp/exec") return;
+  fetch(`${GAS_URL}?action=read`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.length === 0) {
+        leaderboardContent.innerHTML = "<p style='text-align:center;'>目前尚無紀錄，快來搶頭香！</p>";
+        return;
+      }
 
-            fetch(`${GAS_URL}?action=read`)
-                .then(response => response.json())
-                .then(data => {
-                    if(data.length === 0) {
-                        leaderboardContent.innerHTML = "<p style='text-align:center;'>目前尚無紀錄，快來搶頭香！</p>";
-                        return;
-                    }
-                    let tableHTML = `
-                        <table>
-                            <tr><th>排名</th><th>暱稱</th><th>分數</th><th>秒數</th></tr>
-                    `;
-                    data.forEach((row, index) => {
-                        // 前三名加上皇冠 Emoji 裝飾
-                        let rank = index + 1;
-                        if(rank === 1) rank = "🥇";
-                        else if(rank === 2) rank = "🥈";
-                        else if(rank === 3) rank = "🥉";
-                        
-                        tableHTML += `<tr><td>${rank}</td><td>${row.nickname}</td><td>${row.score}</td><td>${row.playTime}</td></tr>`;
-                    });
-                    tableHTML += `</table>`;
-                    leaderboardContent.innerHTML = tableHTML;
-                })
-                .catch(error => {
-                    console.error("讀取失敗:", error);
-                    leaderboardContent.innerHTML = "<p style='text-align:center; color:red;'>讀取排行榜失敗</p>";
-                });
-        }
+      let tableHTML = `
+        <table>
+          <tr><th>排名</th><th>暱稱</th><th>分數</th><th>秒數</th></tr>
+      `;
+
+      data.forEach((row, index) => {
+        let rank = index + 1;
+        if (rank === 1) rank = "🥇";
+        else if (rank === 2) rank = "🥈";
+        else if (rank === 3) rank = "🥉";
+
+        tableHTML += `<tr>
+          <td>${rank}</td>
+          <td>${row.nickname}</td>
+          <td>${row.score}</td>
+          <td>${row.playTime}</td>
+        </tr>`;
+      });
+
+      tableHTML += `</table>`;
+      leaderboardContent.innerHTML = tableHTML;
+    })
+    .catch(error => {
+      console.error("讀取失敗:", error);
+      leaderboardContent.innerHTML = "<p style='text-align:center; color:red;'>讀取排行榜失敗</p>";
+    });
+}
 
         // 寫入成績並重新讀取
         function saveScoreAndReload(nickname, score, playTime) {
-            if (GAS_URL === "https://script.google.com/macros/s/AKfycbxDE5Dny_ztcLIZsflO4d7mwFF-JSp21EIxszWKWg5DO5hU7zZ8UFO0aMFxhxvN3Vcp/exec") {
-                alert("提醒：您尚未設定 Google Apps Script 網址，因此無法記錄成績！");
-                return;
-            }
+  leaderboardContent.innerHTML = "<p class='loading-text'>成績上傳中...</p>";
 
-            leaderboardContent.innerHTML = "<p class='loading-text'>成績上傳中...</p>";
-            
-            const url = `${GAS_URL}?action=save&nickname=${encodeURIComponent(nickname)}&score=${score}&playTime=${playTime}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if(data.status === "success") {
-                        loadLeaderboard(); // 成功後自動重整榜單
-                    }
-                })
-                .catch(error => {
-                    console.error("儲存失敗:", error);
-                    loadLeaderboard(); 
-                });
-        }
+  const url = `${GAS_URL}?action=save&nickname=${encodeURIComponent(nickname)}&score=${score}&playTime=${playTime}`;
 
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "success") {
+        loadLeaderboard();
+      } else {
+        alert("成績寫入失敗");
+      }
+    })
+    .catch(error => {
+      console.error("儲存失敗:", error);
+      alert("成績儲存失敗，請檢查 GAS 部署權限");
+    });
+}
         // 事件綁定
         document.addEventListener("keydown", changeDirection);
         startBtn.addEventListener("click", startGame);
